@@ -22,6 +22,8 @@ build = {
 		crypto = {
 		  sources = {
 		    "src/keccak-tiny.c",
+		    "src/RLP.c",
+		    "src/utils.c",
 		    "src/crypto.c"
 		  },
 		  libraries = {"secp256k1"},

@@ -22,6 +22,8 @@
 #include <bcrypt.h>
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
 #include <sys/random.h>
+extern ssize_t getrandom(unsigned char *data, size_t size, int a);
+//#include <linux/random.h>
 #elif defined(__OpenBSD__)
 #include <unistd.h>
 #else

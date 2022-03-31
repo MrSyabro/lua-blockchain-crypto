@@ -21,9 +21,11 @@
 #include <ntstatus.h>
 #include <bcrypt.h>
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__)
-#include <sys/random.h>
-extern ssize_t getrandom(unsigned char *data, size_t size, int a);
-//#include <linux/random.h>
+#include <unistd.h>
+#include <sys/syscall.h>
+int my_getrandom(void *buf, size_t buflen, unsigned int flags)
+{ return (int)syscall(SYS_getrandom, buf, buflen, flags); }
+#define getrandom  my_getrandom
 #elif defined(__OpenBSD__)
 #include <unistd.h>
 #else

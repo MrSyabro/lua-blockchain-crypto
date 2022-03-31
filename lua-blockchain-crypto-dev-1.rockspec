@@ -1,20 +1,21 @@
 package = "lua-blockchain-crypto"
 version = "dev-1"
 source = {
-   url = "git+https://github.com/MrSyabro/lua-blockchain-crypto.git" -- We don't have one yet
+  url = "git+https://github.com/MrSyabro/lua-blockchain-crypto.git", -- We don't have one yet
+  branch = "devel"
 }
 description = {
-   summary = "Blockchain crypto library",
-   detailed = [[This is the binding of the libsecp256k1
-   library.  Allows you to sign messages using the secp256k1
-   curve, as well as calculate the keccak256 hash.
-   ]], 
-   homepage = "https://github.com/MrSyabro/lua-blockchain-crypto", -- We don't have one yet
-   license = "MIT/X11" -- or whatever you like
+  summary = "Blockchain crypto library",
+  detailed = [[This is the binding of the libsecp256k1
+  library.  Allows you to sign messages using the secp256k1
+  curve, as well as calculate the keccak256 hash.
+  ]], 
+  homepage = "https://github.com/MrSyabro/lua-blockchain-crypto", -- We don't have one yet
+  license = "MIT/X11" -- or whatever you like
 }
 dependencies = {
-   "lua >= 5.2",
-   -- If you depend on other rocks, add them here
+  "lua >= 5.2",
+  -- If you depend on other rocks, add them here
 }
 build = {
 	type = "builtin",
@@ -22,8 +23,7 @@ build = {
 		crypto = {
 		  sources = {
 		    "src/keccak-tiny.c",
-		    "src/RLP.c",
-		    "src/utils.c",
+		    "src/rlp_serializer.c",
 		    "src/crypto.c"
 		  },
 		  libraries = {"secp256k1"},
@@ -35,7 +35,13 @@ build = {
 }
 
 external_dependencies = {
-   LIBSECP256K1 = {
-      header = "secp256k1.h"
-   }
+  LIBSECP256K1 = {
+    header = "secp256k1.h"
+  },
+  LIBSECP256K1_ECDH = {
+    header = "secp256k1_ecdh.h"
+  },
+  LIBSECP256K1_RECOVERY = {
+    header = "secp256k1_recovery.h"
+  }
 }

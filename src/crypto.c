@@ -15,7 +15,6 @@
 
 static int sign(unsigned char *seckey, unsigned char *data, unsigned char *out, int *recid) {
   unsigned char randomize[32];
-  //unsigned char serialized_signature[65];
   secp256k1_ecdsa_recoverable_signature sig;
 
   secp256k1_context* ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
@@ -78,7 +77,8 @@ static int l_sign(lua_State *L) {
   }
 
   lua_pushlstring(L, (const char*)serialized_signature, (size_t)64);
-  return 1;
+  lua_pushnumber(L, recid);
+  return 2;
 }
 
 static int l_get_pubkey(lua_State *L) {

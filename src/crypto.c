@@ -171,11 +171,11 @@ static RlpElement_t *l_torlp(lua_State *L, const char *key) {
   int t = lua_type(L, 2);
   switch (t) {
     case LUA_TNUMBER: {
-      out->len = sizeof(int);
-      int num = lua_tointeger(L, 2);
-      out->buff = (uint8_t *)malloc(sizeof(int));
-      memcpy((void*)out->buff, &num, sizeof(int));
-      out->type = (out->len == 4) ? RLP_TYPE_INT32 : RLP_TYPE_INT64;
+      lua_Integer num = lua_tointeger(L, 2);
+      out->len = sizeof(num);
+      out->buff = (lua_Integer *)malloc(out->len);
+      memcpy((void*)out->buff, &num, out->len);
+      out->type = rlp_int_type_from_size(out->len);
       break;
     }
     case LUA_TSTRING: {

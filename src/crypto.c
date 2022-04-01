@@ -192,6 +192,7 @@ static RlpElement_t *l_torlp(lua_State *L, const char *key) {
       break;
     }
     default: {
+      //printf("[D] %s type %s\n", key, lua_typename(L, t));
       free(out);
       out = NULL;
     }
@@ -219,7 +220,7 @@ static int l_serialize_rlp (lua_State *L) {
 
   const char *const keyList[] = {
     "nonce",
-    "gasprice",
+    "gasPrice",
     "gasLimit",
     "to",
     "value",

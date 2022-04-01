@@ -170,12 +170,18 @@ static RlpElement_t *l_torlp(lua_State *L, const char *key) {
   lua_getfield(L, 1, key);
   int t = lua_type(L, 2);
   switch (t) {
-    case LUA_TNUMBER: {
+    /*case LUA_TNUMBER: {
       lua_Integer num = lua_tointeger(L, 2);
       out->len = sizeof(num);
       out->buff = (lua_Integer *)malloc(out->len);
       memcpy((void*)out->buff, &num, out->len);
       out->type = rlp_int_type_from_size(out->len);
+      break;
+    }*/
+    case LUA_TNIL: {
+      out->len = 0;
+      out->buff = NULL;
+      out->type = RLP_TYPE_BYTE_ARRAY;
       break;
     }
     case LUA_TSTRING: {
@@ -186,17 +192,16 @@ static RlpElement_t *l_torlp(lua_State *L, const char *key) {
       break;
     }
     default: {
-      out->len = 0;
-      out->buff = NULL;
-      out->type = RLP_TYPE_BYTE_ARRAY;
+      free(out);
+      out = NULL;
     }
   }
 
-  lua_remove(L, 2);
+  lua_remove(L, 2); 
   return out;
 }
 
-static void free_rlplist(const RlpElement_t *const *list, size_t n) {
+static void free_rlplist(RlpElement_t* *list, size_t n) {
   for (int i = 0; i < n; i++) {
     RlpElement_t *el = (RlpElement_t *)list[i];
     if (el->len > 0) {
@@ -209,39 +214,49 @@ static void free_rlplist(const RlpElement_t *const *list, size_t n) {
 static int l_serialize_rlp (lua_State *L) {
   luaL_argcheck(L, lua_istable(L, 1), 1, "must be table of transaction");
 
-  uint8_t *rawtx = calloc(4096, sizeof(uint8_t));
+  //uint8_t *rawtx = calloc(4096, sizeof(uint8_t));
+  uint8_t *rawtx[4092] = {0};
 
-  RlpElement_t *nonce = l_torlp(L, "nonce");
-  RlpElement_t *gas_price = l_torlp(L, "gasPrice");
-  RlpElement_t *gas_limit = l_torlp(L, "gasLimit");
-  RlpElement_t *to = l_torlp(L, "to");
-  RlpElement_t *value = l_torlp(L, "value");
-  RlpElement_t *data = l_torlp(L, "data");
-  RlpElement_t *v = l_torlp(L, "v");
-  RlpElement_t *r = l_torlp(L, "r");
-  RlpElement_t *s = l_torlp(L, "s");
-
-  RlpElement_t const *const txList[] = {
-    nonce,
-    gas_price,
-    gas_limit,
-    to,
-    value,
-    data,
-    v, r, s
+  const char *const keyList[] = {
+    "nonce",
+    "gasprice",
+    "gasLimit",
+    "to",
+    "value",
+    "data",
+    "v", "r", "s"
   };
   
-  int outlen = 0;
-  outlen = rlp_encode_list(rawtx, (size_t)4096, txList, sizeof(txList)/sizeof(txList[0]));
+  const size_t list_len = 9; //sizeof(keyList)/sizeof(keyList[0]);
   
-  free_rlplist(txList, sizeof(txList)/sizeof(txList[0]));
+  RlpElement_t* txList[9] = {0};
+  
+  for (int i = 0; i < list_len; i++) {
+    txList[i] = (RlpElement_t *)l_torlp(L, keyList[i]);
+    if (txList[i] == NULL) {
+      if (i > 0 ) free_rlplist(txList, i);
+      
+      lua_pushnil(L);
+      lua_pushstring(L, "bad argument");
+      return 2;
+    }
+  }
+  
+  int outlen = 0;
+  outlen = rlp_encode_list(rawtx, (size_t)4096, (const RlpElement_t *const *)txList, list_len);
+  
+  free_rlplist(txList, list_len);
 
   if (outlen < 0) {
+    free_rlplist(txList, list_len);
+    //free(rawtx);
+    
     lua_pushnumber(L, outlen);
     return 1;
   }
 
   lua_pushlstring(L, (const char *)rawtx, outlen);
+  //free(rawtx);
   return 1;
 }
 

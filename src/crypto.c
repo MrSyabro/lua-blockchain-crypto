@@ -165,25 +165,11 @@ static int l_keccak256(lua_State *L) {
   return 1;
 }
 
-static RlpElement_t *l_torlp(lua_State *L, const char *key) {
+static RlpElement_t *l_torlp(lua_State *L, int key) {
   RlpElement_t *out = malloc(sizeof(RlpElement_t));
-  lua_getfield(L, 1, key);
+  lua_rawgeti(L, 1, key);
   int t = lua_type(L, 2);
   switch (t) {
-    /*case LUA_TNUMBER: {
-      lua_Integer num = lua_tointeger(L, 2);
-      out->len = sizeof(num);
-      out->buff = (lua_Integer *)malloc(out->len);
-      memcpy((void*)out->buff, &num, out->len);
-      out->type = rlp_int_type_from_size(out->len);
-      break;
-    }*/
-    case LUA_TNIL: {
-      out->len = 0;
-      out->buff = NULL;
-      out->type = RLP_TYPE_BYTE_ARRAY;
-      break;
-    }
     case LUA_TSTRING: {
       const char *str = lua_tolstring(L, 2, &out->len);
       out->buff = (uint8_t *)calloc(out->len, sizeof(char));
@@ -192,7 +178,6 @@ static RlpElement_t *l_torlp(lua_State *L, const char *key) {
       break;
     }
     default: {
-      //printf("[D] %s type %s\n", key, lua_typename(L, t));
       free(out);
       out = NULL;
     }
@@ -210,46 +195,37 @@ static void free_rlplist(RlpElement_t* *list, size_t n) {
     }
     free((void *)el);
   }
+  free(list);
 }
 
 static int l_serialize_rlp (lua_State *L) {
   luaL_argcheck(L, lua_istable(L, 1), 1, "must be table of transaction");
 
   //uint8_t *rawtx = calloc(4096, sizeof(uint8_t));
-  uint8_t *rawtx[4092] = {0};
-
-  const char *const keyList[] = {
-    "nonce",
-    "gasPrice",
-    "gasLimit",
-    "to",
-    "value",
-    "data",
-    "v", "r", "s"
-  };
+  //uint8_t *rawtx[4096] = {0};
+  size_t rawtx_len = 1;
   
-  const size_t list_len = 9; //sizeof(keyList)/sizeof(keyList[0]);
+  const size_t list_len = luaL_len(L, 1);
   
-  RlpElement_t* txList[9] = {0};
+  RlpElement_t* *txList = calloc(list_len, sizeof(RlpElement_t));
   
-  for (int i = 0; i < list_len; i++) {
-    txList[i] = (RlpElement_t *)l_torlp(L, keyList[i]);
-    if (txList[i] == NULL) {
-      if (i > 0 ) free_rlplist(txList, i);
-      
-      lua_pushnil(L);
-      lua_pushstring(L, "bad argument");
-      return 2;
+  for (int i = 1; i <= list_len; i++) {
+    RlpElement_t *el = l_torlp(L, i);
+    if (el != NULL) {
+      txList[i-1] = el;
+      rawtx_len += el->len + 1;
     }
   }
   
+  uint8_t *rawtx = malloc(rawtx_len);
+  
   int outlen = 0;
-  outlen = rlp_encode_list(rawtx, (size_t)4096, (const RlpElement_t *const *)txList, list_len);
+  outlen = rlp_encode_list(rawtx, rawtx_len, (const RlpElement_t *const *)txList, list_len);
   
   free_rlplist(txList, list_len);
 
   if (outlen < 0) {
-    free_rlplist(txList, list_len);
+    //free_rlplist(txList, list_len);
     //free(rawtx);
     
     lua_pushnumber(L, outlen);
@@ -257,7 +233,7 @@ static int l_serialize_rlp (lua_State *L) {
   }
 
   lua_pushlstring(L, (const char *)rawtx, outlen);
-  //free(rawtx);
+  free(rawtx);
   return 1;
 }
 
